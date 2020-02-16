@@ -1,17 +1,22 @@
 'use strict';
 
+// TODO show result of the keys pressed and update it every keyup/keydown
+// TODO special key switched mode to back and forth between words and characters
+// TODO better typing area
+
+// path to the json file containing settings
 const DATA_URL = 'words.json';
-const input = document.getElementById('input');
 
 // current data like keybindings and words
 var DATA = {};
 
-// represents keys currently pressed
-// (used to show what will be written)
-var code = 0;
+// history of key releases, used to calculate the code
+var PRESSED_HISTORY = [];
 
-// array of key relases
-var releases = [];
+// integer that represents currently pressed keys
+let PRESSED = 0;
+
+const INPUT_FIELD = document.getElementById('input');
 
 // async read file and call the callback with the text
 function read_file(path, callback) {
@@ -60,11 +65,14 @@ function key(key, state) {
    const key_value = get_key_value(key);
 
    if (state)
-      code |= key_value;
+      PRESSED |= key_value;
    else
-      code &= ~(key_value);
+      PRESSED &= ~(key_value);
 
-   input.value = code.toString(2);
+   if (PRESSED != 0 && DATA.words[PRESSED] !== undefined)
+      INPUT_FIELD.value = DATA.words[PRESSED];
+   else
+      INPUT_FIELD.value = '';
 }
 
 // processes array of key releases into a code
@@ -109,9 +117,8 @@ function process(array) {
 
 // function ran when code of the keys is calculated
 function press(code) {
-   console.log(code);
+   console.log("'" + code + "' => '" + DATA.words[code.toString()] + "'");
 }
-
 
 function keydown(event) {
    if (event.repeat)
@@ -126,21 +133,23 @@ function keyup(event) {
    if (event.repeat)
       return;
 
-   if (DATA.keys.includes(event.key)) {
+   if (event.key == DATA.special_key) {
+      // TODO
+   } else if (DATA.keys.includes(event.key)) {
       key(event.key, false);
 
-      releases.push([millis(), event.key]);
+      PRESSED_HISTORY.push([millis(), event.key]);
 
-      if (code == 0) {
-         press(process(releases))
+      if (PRESSED == 0) {
+         press(process(PRESSED_HISTORY))
 
-         releases = [];
+         PRESSED_HISTORY = [];
       }
    }
 }
 
 read_file(DATA_URL, text => {
-   DATA = JSON.parse(text);
+   load_data(JSON.parse(text));
 
    document.addEventListener('keydown', keydown);
    document.addEventListener('keyup', keyup);
