@@ -1,6 +1,6 @@
 'use strict';
 
-const DATA_URL = '/words.json';
+const DATA_URL = 'words.json';
 const input = document.getElementById('input');
 
 // current data like keybindings and words
@@ -26,7 +26,7 @@ function read_file(path, callback) {
          }
       }
    };
-   request.open("GET", path, true);
+   request.open("GET", window.location.href + path, true);
    request.send();
 }
 
